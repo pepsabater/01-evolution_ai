@@ -38,7 +38,7 @@ Wolf* newWolf=nullptr;
     {   // noves característiques i estats
         newWolf->evolution=evolution;
 
-        playerAction(PLAYER_ACTION_CLONE);
+        playerAction(PLAYER_ACTION_PAIR);
 
         //----------------------------------------------
         // sense variacions genètiques
@@ -66,7 +66,7 @@ Wolf* newWolf=nullptr;
             newWolf->evolution=evolution+1;
             // energia, potser la 'putegem' una mica ;-)
             newWolf->energy=energy;
-            playerAction(PLAYER_ACTION_CLONE);
+            playerAction(PLAYER_ACTION_PAIR);
 
             //----------------------------------------------
             // variacions genètiques

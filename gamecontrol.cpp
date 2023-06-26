@@ -2,8 +2,7 @@
 #include "gamecontrol.h"
 
 GameController::GameController(QGraphicsScene* scene, GameView* view, MyStatsDialog* statsDialog)
-{
-    // assignem l'escena i la vista heretades
+{   // assignem l'escena i la vista heretades
     gameScene=scene;
     gameView=view;
     gameStatsDialog=statsDialog;
@@ -59,23 +58,30 @@ void GameController::gSetTheatre ()
     gameView->setBackgroundBrush(*gameBrush);
 
     // afegim els jugadors
-    gMakePlayers(PLAYER_TYPE_APPLE);
-    gMakePlayers(PLAYER_TYPE_SHEEP);
-    gMakePlayers(PLAYER_TYPE_WOLF);
+    gMakePlayers(PLAYER_TYPE_APPLE, INITIAL_APPLES);
+    gMakePlayers(PLAYER_TYPE_SHEEP, INITIAL_SHEEPS);
+    gMakePlayers(PLAYER_TYPE_WOLF, INITIAL_WOLVES);
 }
 
-void GameController::gMakePlayers(int playerType)
+void GameController::gMakePlayers(int playertype, int numplayers)
 {
+QString facepixpath;
+QGraphicsPixmapItem* facepixmap;
 int counter;
-Player* newPlayer=nullptr;
+Player* newplayer=nullptr;
 
-    switch (playerType)
+    switch (playertype)
     {
     case PLAYER_TYPE_APPLE:
-        for (counter=0; counter<INITIAL_APPLES; counter++)
+        for (counter = 0; counter < numplayers; counter++)
         {   // menjar
-            newPlayer=new Apple();
-            if (playerAdd (newPlayer)== true)
+            newplayer=new Apple();
+            facepixpath=applePixmapPath;
+            newplayer->setPixmapPath(facepixpath);
+            facepixmap = new QGraphicsPixmapItem(QPixmap(newplayer->getPixmapPath()));
+            newplayer->setPixmap(facepixmap);
+
+            if (playerAdd (newplayer)== true)
             {   // estadístiques
                 stLiveApples++;
                 stInApples++;
@@ -84,40 +90,56 @@ Player* newPlayer=nullptr;
         }
         break;
     case PLAYER_TYPE_SHEEP:
-        for (counter=0; counter<INITIAL_SHEEPS; counter++)
+        for (counter = 0; counter < numplayers; counter++)
         {   // bens, generats de cero o a partir del que ha trigat més en morir
-            if(lastSheep!=nullptr)
-                newPlayer=lastSheep->Clone();
+            if (lastSheep!=nullptr)
+                newplayer=lastSheep->Clone();
             else
-                newPlayer=new Sheep();
+                newplayer=new Sheep();
 
-            if (playerAdd (newPlayer)==true)
+            facepixpath=(newplayer->getEvolution()>=SHEEP_PIXMAPS)? sheepPixmapPaths[newplayer->getEvolution()%SHEEP_PIXMAPS]
+                : sheepPixmapPaths[newplayer->getEvolution()];
+
+            newplayer->setPixmapPath(facepixpath);
+            facepixmap = new QGraphicsPixmapItem(QPixmap(newplayer->getPixmapPath()));
+            newplayer->setPixmap(facepixmap);
+            newplayer->setVision();
+
+            if (playerAdd (newplayer)==true)
             {   // estadístiques
                 stLiveSheeps++;
                 stInSheeps++;
                 stInSheepTotals++;
 
-                if(newPlayer->getEvolution()>stSheepEvolution)
-                  stSheepEvolution=newPlayer->getEvolution();
+                if(newplayer->getEvolution()>stSheepEvolution)
+                    stSheepEvolution=newplayer->getEvolution();
             }
         }
         break;
     case PLAYER_TYPE_WOLF:
-        for (counter=0; counter<INITIAL_WOLVES; counter++)
+        for (counter = 0; counter < numplayers; counter++)
         {   // llops, generats de cero o a partir del que ha trigat més en morir
-            if(lastWolf!=nullptr)
-                newPlayer=lastWolf->Clone();
+            if (lastWolf!=nullptr)
+                newplayer=lastWolf->Clone();
             else
-                newPlayer=new Wolf();
+                newplayer=new Wolf();
 
-            if (playerAdd (newPlayer)==true)
+            facepixpath=(newplayer->getEvolution()>=WOLF_PIXMAPS)? wolfPixmapPaths[newplayer->getEvolution()%WOLF_PIXMAPS]
+                : wolfPixmapPaths[newplayer->getEvolution()];
+
+            newplayer->setPixmapPath(facepixpath);
+            facepixmap = new QGraphicsPixmapItem(QPixmap(newplayer->getPixmapPath()));
+            newplayer->setPixmap(facepixmap);
+            newplayer->setVision();
+
+            if (playerAdd (newplayer)==true)
             {   // estadístiques
                 stLiveWolves++;
                 stInWolves++;
                 stInWolfTotals++;
 
-                if(newPlayer->getEvolution()>stWolfEvolution)
-                  stWolfEvolution=newPlayer->getEvolution();
+                if(newplayer->getEvolution()>stWolfEvolution)
+                    stWolfEvolution=newplayer->getEvolution();
             }
         }
         break;
@@ -136,110 +158,31 @@ static int growCounter=0;
 static int lifeCounter=0;
 Player* currPlayer=nullptr;
 Player* newPlayer=nullptr;
-QGraphicsPixmapItem* currPlayerPixmap=nullptr;
 int newApples=0;
 
     // posem a l'hora els comptadors de cicles
     growCounter++;
     lifeCounter++;
-
-    // neteja de cadàvers
-    for (counter=0; (unsigned long)counter < playersPool.size(); counter++)
-    {   // neteja de cadàvers
-        if(playersPool[counter]->getStatus()==PLAYER_STATUS_DEAD
-            && playersPool[counter]->isOnPlay()== true)
-        {   // el fotem fora del joc
-            switch (playersPool[counter]->getType())
-            {   // recollim estadístiques
-            case PLAYER_TYPE_APPLE:
-                stLiveApples--;
-                stOutApples++;
-                stOutAppleTotals++;
-                break;
-            case PLAYER_TYPE_SHEEP:
-                lastSheep=playersPool[counter];
-                stLiveSheeps--;
-                stOutSheeps++;
-                stOutSheepTotals++;
-                break;
-            case PLAYER_TYPE_WOLF:
-                lastWolf=playersPool[counter];
-                stLiveWolves--;
-                stOutWolves++;
-                stOutWolfTotals++;
-                break;
-            }
-            // l'assenyalem com a fora del joc
-            playersPool[counter]->playerPlayOff();
-            currPlayerPixmap=playersPool[counter]->getPixmap();
-
-            if (currPlayerPixmap != nullptr)
-                gameScene->removeItem(currPlayerPixmap);
-            playersPool[counter]->setPixmap(nullptr);
-        }
-    }
-
-    // belluguem els jugadors
-    for (counter=0; (unsigned long)counter < playersPool.size(); counter++)
-    {   // movem els jugadors
-        if (playersPool[counter]->isActive()==true
-                && playersPool[counter]->getStatus() == PLAYER_STATUS_LIVE
-                && playersPool[counter]->isOnPlay()==true)
-        {   // forcem un moviment aleatori, per ara
-            switch ((alNumGen(0, 3, 1)<3)? PLAYER_ACTION_WALK : alNumGen(1,3,1))
-            {
-            case PLAYER_ACTION_WAIT:    // esperar
-                break;
-            case PLAYER_ACTION_WALK:    // caminar
-                playerMove(playersPool[counter]);
-                break;
-            case PLAYER_ACTION_LEFT:    // tombrar a l'esquerra
-                playerGoLeft(playersPool[counter]);
-
-                if (playerMove(playersPool[counter])==false)
-                    playerGoLeft(playersPool[counter]);
-                break;
-            case PLAYER_ACTION_RIGHT:    // tombar a la dreta
-                playerGoRight(playersPool[counter]);
-
-                if (playerMove(playersPool[counter])==false)
-                    playerGoRight (playersPool[counter]);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-
-    // cada 50 passes del rellotge (5 segons)
-    if (growCounter == 50)
+    // cada 20 passes del rellotge (5 segons)
+    if (growCounter == 20)
     {   // comptador de passes a zero
         growCounter = 0;
-
-        //------------------------
-        // regenerador de 'vida'
-        //------------------------
-
-        // les pomes, per cada 4 pomes 'vives' n'afegim una altra
-        // si no n'hi ha cap regenerem la meitat de màxmin premés
+        //---------------------
+        // regenerador de pomes
+        //---------------------
+        // per cada 4 pomes 'vives' n'afegim una altra
+        // si no n'hi ha cap regenerem un quart de màxmin premés
         if (stLiveApples==0)
-            newApples=MAX_APPLES/4;
+            newApples = MAX_APPLES / 4;
         else
-            if (stLiveApples + (unsigned int)stLiveApples/4 <= MAX_APPLES)
-                newApples = (unsigned int)stLiveApples/4;
-            else
-                newApples = stLiveApples/4 - (stLiveApples + (unsigned int)stLiveApples/4 - MAX_APPLES);
-
-        for (counter=0; counter < newApples; counter ++)
         {
-            currPlayer=new Apple();
-            if (playerAdd(currPlayer)==true)
-            {   // estadístiques
-                stLiveApples++;
-                stInApples++;
-                stInAppleTotals++;
-            }
+            if (stLiveApples + (int)(stLiveApples / 4) <= MAX_APPLES)
+                newApples = (int)(stLiveApples / 4);
+            else
+                newApples = MAX_APPLES - stLiveApples;
         }
+
+        gMakePlayers(PLAYER_TYPE_APPLE, newApples);
     }
 
     // cada 10 passes del rellotge
@@ -301,6 +244,10 @@ int newApples=0;
         }
     }
 
+    // belluguem els jugadors
+    playersMotion();
+    // analisi de topades
+    sceneCollisions();
     // visualitzar estadístiques
     gGameStatistics();
     gPlayersStatistics();
@@ -308,113 +255,198 @@ int newApples=0;
     // si ha mort tota una espècie!
     if (stLiveSheeps==0 || stLiveWolves==0)
     { // aturem el món!
-//        gameTamTam->stop();
+        gameTamTam->stop();
         // guanyador del joc
         if(stLiveSheeps==0||stLiveWolves==0)
         {
             stIteration++;
             stLastSurvivor=(stLiveSheeps==0)? PLAYER_TYPE_WOLF : PLAYER_TYPE_SHEEP;
             gSetRestart();
-            gMakePlayers((stLiveSheeps==0)? PLAYER_TYPE_SHEEP : PLAYER_TYPE_WOLF);
+            (stLiveSheeps==0)? gMakePlayers(PLAYER_TYPE_SHEEP, INITIAL_SHEEPS)
+                             : gMakePlayers(PLAYER_TYPE_WOLF, INITIAL_WOLVES);
         }
     }
+}
+
+void GameController::playersMotion()
+{
+int counter;
+
+    for (counter=0; (unsigned long)counter < playersPool.size(); counter++)
+       // movem els jugadors
+        if (playersPool[counter]->isActive() == true)
+        {
+            if (playersPool[counter]->isHunting() == true
+                || playersPool[counter]->isFleeing() == true)
+            {
+                playerMove(playersPool[counter], PLAYER_ACTION_GO);
+                playersPool[counter]->isFleeing(false);
+            }
+            else // forcem un moviment aleatori, per ara
+                playerMove(playersPool[counter], ((alNumGen(0,5,1) < 5)? PLAYER_ACTION_GO : alNumGen(0, 2, 1)));
+        }
 }
 
 //---------------------
 // belluga el jugador
 //---------------------
-
-bool GameController::playerMove (Player* player)
+bool GameController::playerMove (Player* player, int action)
 {
-int oldXPos;
-int oldYPos;
-int newXPos;
-int newYPos;
-QGraphicsPixmapItem* playerPixmap=nullptr;
-QGraphicsPixmapItem* targetPixmap=nullptr;
-Player* targetPlayer=nullptr;
 bool retval=false;
 
     // si és un jugador vàlid
-    if (player==nullptr)
-        return retval;
-
-    // enregistrem la seva posicio
-    newXPos=oldXPos=player->getXPos();
-    newYPos=oldYPos=player->getYPos();
-    // mirem cap a on assenyala la bruïxola
-    switch (player->getCompass())
-    {   // i n'adjustem les noves coordinades
-    case COMPASS_N:
-        newYPos=oldYPos-PLAYER_XDRIFT;
-        break;
-    case COMPASS_NE:
-        newXPos=oldXPos+PLAYER_XDRIFT;
-        newYPos=oldYPos-PLAYER_YDRIFT;
-        break;
-    case COMPASS_E:
-        newXPos=oldXPos+PLAYER_XDRIFT;
-        break;
-    case COMPASS_SE:
-        newXPos=oldXPos+PLAYER_XDRIFT;
-        newYPos=oldYPos+PLAYER_YDRIFT;
-        break;
-    case COMPASS_S:
-        newYPos=oldYPos+PLAYER_YDRIFT;
-        break;
-    case COMPASS_SW:
-        newXPos=oldXPos-PLAYER_XDRIFT;
-        newYPos=oldYPos+PLAYER_YDRIFT;
-        break;
-    case COMPASS_W:
-        newXPos=oldXPos-PLAYER_XDRIFT;
-        break;
-    case COMPASS_NW:
-        newXPos=oldXPos-PLAYER_XDRIFT;
-        newYPos=oldYPos-PLAYER_YDRIFT;
-        break;
-    default:    // no sap on vol anar!
-        return retval;
-    }
-
-    // si la nova posició és dins l'escena
-    if ((newXPos>=0 && newXPos <= VIEW_WIDTH-PIXMAP_WIDTH)
-        && (newYPos>=0 && newYPos <= VIEW_HEIGHT-PIXMAP_HEIGHT))
-    {   // enregistrem la referència de l'imatge a l'escena
-        playerPixmap=player->getPixmap();
-
-        if (playerPixmap != nullptr)
-        {   // el posicionem a l'escena
-            playerPixmap->setPos(newXPos,newYPos);
-            // si no hi ha res
-            if(gameScene->collidingItems(playerPixmap).size()==0)
-            {
-                // ho possem a l'hora
-                player->playerMoveTo(newXPos,newYPos);
-                player->playerAction(PLAYER_ACTION_WALK);
-            }
-            else
-            {   // mirem amb que 'ha trobat
-                targetPixmap=(QGraphicsPixmapItem*)gameScene->collidingItems(playerPixmap)[0];
-                for (int counter=0; (unsigned int)counter < playersPool.size(); counter++)
-                    if (targetPixmap == playersPool[counter]->getPixmap())
-                        targetPlayer = playersPool[counter];
-                // i després el tornem a lloc...
-                player->setPos(oldXPos, oldYPos);
-                playerPixmap->setPos(oldXPos,oldYPos);
-                // i mirem que ha passat!
-                playersParty(player, targetPlayer);
-            }
-            retval=true;
+    if (player!=nullptr)
+    {   // hi haurà moviment/acció
+        retval=true;
+        // a veure que ens demanen de fer
+        switch (action)
+        {
+        case PLAYER_ACTION_GO:
+            playerGo(player);
+            break;
+        case PLAYER_ACTION_TLEFT:
+            playerGoLeft(player);
+            break;
+        case PLAYER_ACTION_TRIGHT:
+            playerGoRight(player);
+            break;
+        case PLAYER_ACTION_REVERSE:
+            playerGoReverse(player);
+            break;
+        case PLAYER_ACTION_WAIT:
+            playerWait(player);
+            break;
+        case PLAYER_ACTION_PURSUE:
+            playerPursue(player);
+            break;
+        case PLAYER_ACTION_FLEE:
+            playerFlee(player);
+            break;
+        case PLAYER_ACTION_FIGHTH:
+            playerFight(player);
+            break;
+        case PLAYER_ACTION_PAIR:
+            playerPair(player);
+            break;
+        case PLAYER_ACTION_EATING:
+            playerEat(player);
+            break;
+        default:    // no sap on vol anar!
+            retval=false;
         }
     }
     return retval;
 }
 
+void GameController::playerGo (Player* player)
+{
+int newxpos=0;
+int newypos=0;
+
+    // si no és un jugador vàlid
+    if (player==nullptr)
+        return;
+
+    // enregistrem la seva posicio
+    newxpos=player->getXPos();
+    newypos=player->getYPos();
+
+    switch (player->getCompass())
+    {   // recalculem la posició segon la brúixola
+    case COMPASS_N:
+        newypos-=PLAYER_XDRIFT;
+        break;
+    case COMPASS_NE:
+        newxpos+=PLAYER_XDRIFT;
+        newypos-=PLAYER_YDRIFT;
+        break;
+    case COMPASS_E:
+        newxpos+=PLAYER_XDRIFT;
+        break;
+    case COMPASS_SE:
+        newxpos+=PLAYER_XDRIFT;
+        newypos+=PLAYER_YDRIFT;
+        break;
+    case COMPASS_S:
+        newypos+=PLAYER_YDRIFT;
+        break;
+    case COMPASS_SW:
+        newxpos-=PLAYER_XDRIFT;
+        newypos+=PLAYER_YDRIFT;
+        break;
+    case COMPASS_W:
+        newxpos-=PLAYER_XDRIFT;
+        break;
+    case COMPASS_NW:
+        newxpos-=PLAYER_XDRIFT;
+        newypos-=PLAYER_YDRIFT;
+        break;
+    default:    // no sap on vol anar!
+        return;
+    }
+
+    // si la nova posició és dins l'escena
+    if ((newxpos>=0 && newxpos <= VIEW_WIDTH-PIXMAP_WIDTH)
+        && (newypos>=0 && newypos <= VIEW_HEIGHT-PIXMAP_HEIGHT))
+        // posem al'hora les coordinades del jugador
+        player->setPos(newxpos, newypos);
+    else    // si no, retruc
+        switch (player->getCompass())
+        {
+        case COMPASS_N:
+        case COMPASS_E:
+        case COMPASS_S:
+        case COMPASS_W:
+            playerGoReverse(player);
+            break;
+        case COMPASS_NE:
+            if (newxpos > VIEW_WIDTH-PIXMAP_WIDTH)
+                playerGoLeft(player);
+            else
+                playerGoRight(player);
+            break;
+        case COMPASS_SE:
+            if (newxpos > VIEW_WIDTH-PIXMAP_WIDTH)
+                playerGoRight(player);
+            else
+                playerGoLeft(player);
+            break;
+        case COMPASS_SW:
+            if (newxpos < 0)
+                playerGoLeft(player);
+            else
+                playerGoRight(player);
+            break;
+        case COMPASS_NW:
+            if (newxpos < 0)
+                playerGoRight(player);
+            else
+                playerGoLeft(player);
+            break;
+        }
+}
+
+void GameController::playerWait(Player* player)
+{}
+
+void GameController::playerPursue(Player* player)
+{}
+
+void GameController::playerFlee(Player* player)
+{}
+
+void GameController::playerFight(Player* player)
+{}
+
+void GameController::playerPair(Player* player)
+{}
+
+void GameController::playerEat(Player* player)
+{}
+
 //---------------------------------------
 // nucli principal de la lògica del joc
 //---------------------------------------
-
 void GameController::playersParty (Player* sourcePlayer, Player* targetPlayer)
 {
     // són dos jugadors vàlids
@@ -522,61 +554,8 @@ int energyInOut=0;
         playerEating->playerEating(energyInOut);
 
 //        playerEaten->playerEaten(energyInOut);    // consumim tant sols una mica, segueis viu
-        playerEaten->playerEaten(playerEaten->getEnergy()); // consumim tota la seva energia, es mor
+        playerEaten->playerEating(playerEaten->getEnergy()); // consumim tota la seva energia, es mor
     }
-}
-
-//----------------------------------------
-// afegueix el jugador i l'hi busca lloc
-//----------------------------------------
-// fa servir el vector de jugadors
-bool GameController::playerAdd(Player* newPlayer)
-{
-QString facePixPath;
-QGraphicsPixmapItem* facePixmap;
-
-bool retval=false;
-
-    if (newPlayer!=nullptr)
-    {
-        switch (newPlayer->getType())
-        {   // carreguem l'imatge segons la mena de jugador
-        case PLAYER_TYPE_APPLE:
-            facePixPath=applePixmapPath;
-            break;
-        case PLAYER_TYPE_SHEEP:
-            // canvia de color amb cada nova generació
-            facePixPath=(newPlayer->getEvolution()>=SHEEP_PIXMAPS)? sheepPixmapPaths[newPlayer->getEvolution()%SHEEP_PIXMAPS]
-                : sheepPixmapPaths[newPlayer->getEvolution()];
-            break;
-        case PLAYER_TYPE_WOLF:  // canvia de color amb cada nova generació
-            // canvia de color amb cada nova generació
-            facePixPath=(newPlayer->getEvolution()>=WOLF_PIXMAPS)? wolfPixmapPaths[newPlayer->getEvolution()%WOLF_PIXMAPS]
-                : wolfPixmapPaths[newPlayer->getEvolution()];
-            break;
-        default:
-            facePixPath=skullPixmapPath;
-            break;
-        }
-
-        // creem i associem l'imatge
-        facePixmap=new QGraphicsPixmapItem(QPixmap(facePixPath));
-        facePixmap->setFlag(QGraphicsItem::ItemIsMovable, true);
-        newPlayer->setPixmap(facePixmap);
-        // afegim el jugador a la llista de jugadors
-        playersPool.push_back(newPlayer);
-        // el posicionem a l'escena
-        facePixmap->setPos(newPlayer->getXPos(),newPlayer->getYPos());
-        gameScene->addItem(facePixmap);
-
-        do
-        {   // el busquem un lloc a l'escena, repetim fins trobar-ne un de lliure
-            newPlayer->setPos(alNumGen(0,VIEW_WIDTH-PIXMAP_WIDTH,PLAYER_XDRIFT),alNumGen(0,VIEW_HEIGHT-PIXMAP_HEIGHT,PLAYER_YDRIFT));
-            facePixmap->setPos(newPlayer->getXPos(), newPlayer->getYPos());
-        } while (gameScene->collidingItems(facePixmap).size()!=0);
-        retval=true;
-    }
-    return retval;
 }
 
 //--------------------------------
@@ -588,24 +567,11 @@ void GameController::playerGoLeft(Player* player)
 int leftDir;
 
     if (player!=nullptr)
-    {
+    {   // un tomb a l'esquerra tanca l'angle
         leftDir=player->getCompass() - 1;
-        player->setCompass((leftDir < 0)? COMPASS_STEPS - 1 : leftDir);
-    }
-}
-
-//-------------------------------
-// el jugador tomba a la dreta
-//-------------------------------
-
-void GameController::playerGoRight(Player* player)
-{
-int rightDir;
-
-    if (player!=nullptr)
-    {
-        rightDir=player->getCompass() + 1;
-        player->setCompass((rightDir == COMPASS_STEPS)? COMPASS_N : rightDir);
+        (leftDir < 0)? player->setCompass(COMPASS_STEPS - 1) : player->setCompass(leftDir);
+        player->pointTo();
+        playerRotation(player);
     }
 }
 
@@ -620,8 +586,62 @@ int newDir;
     if (player!=nullptr)
     {
         newDir=player->getCompass() + COMPASS_STEPS/2;
-        player->setCompass((newDir == COMPASS_STEPS)? COMPASS_N : newDir);
+        (newDir >= COMPASS_STEPS)? player->setCompass(newDir-COMPASS_STEPS) : player->setCompass(newDir);
+        player->pointTo();
+        playerRotation(player);
     }
+}
+
+//-------------------------------
+// el jugador tomba a la dreta
+//-------------------------------
+
+void GameController::playerGoRight(Player* player)
+{
+int rightDir;
+
+    if (player!=nullptr)
+    {   // un tomb a la dreta obre l'angle
+        rightDir=player->getCompass() + 1;
+        (rightDir >= COMPASS_STEPS)? player->setCompass(0) : player->setCompass(rightDir);
+        player->pointTo();
+        playerRotation(player);
+    }
+}
+
+//----------------------------------------
+// afegueix el jugador i l'hi busca lloc
+//----------------------------------------
+// fa servir el vector de jugadors
+bool GameController::playerAdd(Player* newplayer)
+{
+bool retval=false;
+
+    if (newplayer!=nullptr)
+    {   // afegim el jugador a la llista de jugadors
+        playersPool.push_back(newplayer);
+        // per raons 'estètiques' afegim primer el 'camp de visió'
+        if(newplayer->getVisionItem()!=nullptr)
+            gameScene->addItem(newplayer->getVisionItem());
+        // i ara el jugador
+        gameScene->addItem(newplayer->getPixmap());
+        // forcem una orientació aleatòria
+        if (newplayer->isActive() == true)
+        {
+            newplayer->setCompass(alNumGen(0, COMPASS_STEPS, 1));
+            newplayer->pointTo();
+            playerRotation(newplayer);
+        }
+
+        do
+        {   // el busquem un lloc a l'escena, repetim fins trobar-ne un de lliure
+            newplayer->setPos(alNumGen(0, VIEW_WIDTH-PIXMAP_WIDTH, PLAYER_XDRIFT), alNumGen(0, VIEW_HEIGHT-PIXMAP_HEIGHT, PLAYER_YDRIFT));
+            // mirem si el lloc és ple
+            // si no n'ha trobat cap, sortim
+        } while (playerCollision(newplayer) == true);
+        retval=true;
+    }
+    return retval;
 }
 
 //-----------------------------------------------
@@ -631,6 +651,7 @@ int newDir;
 void GameController::touchMe (QKeyEvent* keyEvent)
 {
 static Player* gamePlayer0=nullptr;
+int playeraction=0;
 
     if (gamePlayer0 == nullptr)
     {
@@ -641,73 +662,55 @@ static Player* gamePlayer0=nullptr;
     switch (keyEvent->key())
     {
     case Qt::Key_Up:
-        gamePlayer0->setCompass(COMPASS_N);
+        playeraction=PLAYER_ACTION_GO;
         break;
     case Qt::Key_Left:
-        gamePlayer0->setCompass(COMPASS_W);
+        playeraction=PLAYER_ACTION_TLEFT;
         break;
     case Qt::Key_Down:
-        gamePlayer0->setCompass(COMPASS_S);
+        playeraction=PLAYER_ACTION_REVERSE;
         break;
     case Qt::Key_Right:
-        gamePlayer0->setCompass(COMPASS_E);
-        break;
-    case Qt::Key_W:
-        gamePlayer0->setCompass(COMPASS_NW);
-        break;
-    case Qt::Key_E:
-        gamePlayer0->setCompass(COMPASS_NE);
-        break;
-    case Qt::Key_S:
-        gamePlayer0->setCompass(COMPASS_SW);
-        break;
-    case Qt::Key_D:
-        gamePlayer0->setCompass(COMPASS_SE);
+        playeraction=PLAYER_ACTION_TRIGHT;
         break;
     case Qt::Key_Space:
-        // per a tasques d'aprenentatge de l'AI
-//            if (stLiveSheeps==0 || stLiveWolves==0)
-//            {   // repetició i regeneració
-//                stIteration++;
-//                gSetRestart();
-//                gMakePlayers((stLiveSheeps==0)? PLAYER_TYPE_SHEEP : PLAYER_TYPE_WOLF);
-//            }
         // aturar/endegar el rellotge
         (gameTamTam->isActive()==true)? gameTamTam->stop() : gameTamTam->start();
         return;
     default:
         return;
     }
-    playerMove(gamePlayer0);
+    playerMove(gamePlayer0, playeraction);
 }
 
 //-----------------------------------------------
-// dibuixem el jugador
+// dibuixem el jugador amb la nova orientació
 //-----------------------------------------------
 // si rotation = true, és que cal girar-lo
 // si rotation = false, és un desplaçament lineal
 //-----------------------------------------------
 
-void GameController::playerDraw(Player *player, bool rotation)
+void GameController::playerRotation(Player *player)
 {
-QGraphicsPixmapItem* pixmapItem;
-
-    pixmapItem=player->getPixmap();
+QGraphicsPixmapItem* pixmap;
+QGraphicsEllipseItem* visionitem;
 
     if (player==nullptr || player->getPixmap() == nullptr)
         return;
 
-    if (rotation==true)
-    {   // fixem el punt de gir fem la rotació
-        pixmapItem->setTransformOriginPoint(pixmapItem->boundingRect().center());
-        pixmapItem->setRotation(player->getCompassAngle());
-        pixmapItem->update();
-    }
-    else
-        // el posicionem a l'escena
-        pixmapItem->setPos(player->getXPos(), player->getYPos());
-}
+    pixmap=player->getPixmap();
+    // fixem el punt de gir fem la rotació
+    pixmap->setTransformOriginPoint(pixmap->boundingRect().center());
+    pixmap->setRotation(player->getCompassAngle());
 
+    visionitem=player->getVisionItem();
+
+    if(visionitem!=nullptr)
+    {   // fixem el punt de gir fem la rotació
+        visionitem->setTransformOriginPoint(visionitem->rect().center());
+        visionitem->setRotation(player->getCompassAngle());
+    }
+}
 
 Player* GameController::playerFinder(int playerType)
 {
@@ -721,6 +724,156 @@ Player* foundPlayer=nullptr;
             break;
         }
     return foundPlayer;
+}
+
+int GameController::isPlayer(QGraphicsItem* graphitem)
+{   // és jugador o una altre cosa?
+int retval=PLAYER_NONE;
+int counter;
+
+    if (graphitem== nullptr)
+        return retval;
+
+    for(counter=0; (unsigned int)counter < playersPool.size(); counter++)
+        if(playersPool[counter]->getPixmap()==graphitem)
+        {
+            retval=counter;
+            break;
+        }
+    return retval;
+}
+
+bool GameController::playerCollision(Player* player)
+{   // es validen els contactes del jugador
+QList<QGraphicsItem*> playerslist;
+int playeritems=0;
+bool retval;
+
+    if (player==nullptr)
+        return false;
+
+    // si té cercle de captura té un item+
+    if (player->getVisionItem()!=nullptr)
+        playeritems++;
+
+    playerslist=gameScene->collidingItems(player->getPixmap());
+    retval=(playerslist.size() > playeritems)? true : false;
+    return retval;
+}
+
+int GameController::playerOnFocus(Player* player)
+{   // es validen els contactes del jugador 0
+int counter;
+int loadplayer=PLAYER_NONE;
+int foundplayer=PLAYER_NONE;
+QList<QGraphicsItem*> playerslist;
+
+    if (player==nullptr || player->isActive() == false)
+        return foundplayer;
+
+    playerslist=gameScene->collidingItems(player->getVisionItem());
+
+    for (counter=0; counter < playerslist.size(); counter++)
+    {
+        loadplayer=isPlayer(playerslist[counter]);
+        if (loadplayer != PLAYER_NONE && playersPool[loadplayer] != player)
+        {
+            foundplayer=loadplayer;
+            break;
+        }
+    }
+    return foundplayer;
+}
+
+int GameController::playerOnContact(Player* player)
+{   // es validen els contactes del jugador 0
+int counter;
+int loadplayer=PLAYER_NONE;
+int foundplayer=PLAYER_NONE;
+QList<QGraphicsItem*> playerslist;
+
+    if (player==nullptr || player->isActive() == false)
+        return foundplayer;
+
+    playerslist=gameScene->collidingItems(player->getPixmap());
+
+    for (counter=0; counter < playerslist.size(); counter++)
+    {
+        loadplayer=isPlayer(playerslist[counter]);
+        if (loadplayer != PLAYER_NONE && playersPool[loadplayer] != player)
+        {
+            foundplayer = loadplayer;
+            break;
+        }
+    }
+    return foundplayer;
+}
+
+void GameController::sceneCollisions()
+{   // es validen els contactes del jugador 0
+int oncontactplayer=PLAYER_NONE;
+int onfocusplayer=PLAYER_NONE;
+int counter=0;
+
+    for (counter = 0; (unsigned)counter < playersPool.size(); counter++)
+    {
+        oncontactplayer=playerOnContact(playersPool[counter]);
+
+        if (oncontactplayer != PLAYER_NONE && playersPool[oncontactplayer]->isOnPlay() == true
+            && (playersPool[counter]->getType() - playersPool[oncontactplayer]->getType()) == 1)
+        {   // si n'hi ha cap en contacte, ens el pelem! - per ara
+            playersPool[counter]->isHunting(false);
+
+            switch (playersPool[oncontactplayer]->getType())
+            {   // estadístiques
+            case PLAYER_TYPE_APPLE:
+                stLiveApples--;
+                stOutApples++;
+                stOutAppleTotals++;
+                break;
+            case PLAYER_TYPE_SHEEP:
+                lastSheep=playersPool[oncontactplayer];
+                stLiveSheeps--;
+                stOutSheeps++;
+                stOutSheepTotals++;
+                break;
+            case PLAYER_TYPE_WOLF:
+                lastWolf=playersPool[oncontactplayer];
+                stLiveWolves--;
+                stOutWolves++;
+                stOutWolfTotals++;
+                break;
+            }
+            if (playersPool[oncontactplayer]->getVisionItem() != nullptr)
+                gameScene->removeItem(playersPool[oncontactplayer]->getVisionItem());
+            gameScene->removeItem(playersPool[oncontactplayer]->getPixmap());
+            playersPool[oncontactplayer]->playerPlayOff();
+        }
+        else
+        {
+            onfocusplayer=playerOnFocus(playersPool[counter]);
+
+            if (onfocusplayer != PLAYER_NONE && playersPool[onfocusplayer]->isOnPlay() == true)
+                switch (playersPool[counter]->getType() - playersPool[onfocusplayer]->getType())
+                {
+                case -1:    // és un depredador, fugim
+                    playersPool[counter]->isFleeing(true);
+                    playerGoReverse(playersPool[counter]);
+                    break;
+                case 0: // és un 'igual'
+                    playersPool[counter]->isHunting(false);
+                    playersPool[counter]->isFleeing(false);
+                    break;
+                case 1: // és menjar, el cerquem
+                    playersPool[counter]->isHunting(true);
+                    playersPool[counter]->isFleeing(false);
+                    playersPool[counter]->pointTo(playersPool[onfocusplayer]->getXPos(), playersPool[onfocusplayer]->getYPos());
+                    playerRotation(playersPool[counter]);
+                    break;
+                }
+
+        }
+    }
 }
 
 //-------------------------------------
@@ -763,7 +916,6 @@ Player* foundPlayer = nullptr;
     }
     return foundPlayer;
 }
-
 
 //-----------------------------------------------------------
 // posar a l'hora les estadístiques i mostrar-les al diàleg

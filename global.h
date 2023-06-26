@@ -43,12 +43,12 @@
 #define GAME_WORLD_TIMER_TIME   30    // 100
 
 // ecosistema del 'joc'
-#define INITIAL_APPLES  32  // 24
-#define MAX_APPLES      48  // 32
-#define INITIAL_SHEEPS  16  // 12
+#define INITIAL_APPLES  32  // 32
+#define MAX_APPLES      48  // 48
+#define INITIAL_SHEEPS  12  // 12
 #define MAX_SHEEPS      24  // 24
 #define INITIAL_WOLVES  6   // 6
-#define MAX_WOLVES      8   // 12
+#define MAX_WOLVES      12  // 12
 
 // paràmetres d'energia
 #define APPLE_MAX_ENERGY  250   // 100

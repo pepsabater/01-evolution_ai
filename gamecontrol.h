@@ -97,25 +97,55 @@ std::vector<Player*>playersPool;   // col·lecció de jugadors
     // afegir jugador
     bool playerAdd(Player*);
     // desplaçar jugador segons el compàs
-    bool playerMove(Player*);
+    bool playerMove(Player*, int);
+    // dur el jugador cap a endavant
+    void playerGo(Player*);
     // dur el jugador a l'esquerra
     void playerGoLeft(Player*);
     // dur el jugador a la dreta
     void playerGoRight(Player*);
     // dur el jugador a l'inrevés
     void playerGoReverse(Player*);
+    // dur el jugador espera
+    void playerWait(Player*);
+    // el jugador inicia la persecució
+    void playerPursue(Player*);
+    // el jugador inicia la fugida
+    void playerFlee(Player*);
+    // el jugador lluita
+    void playerFight(Player*);
+    // el jugador s'aparella
+    void playerPair(Player*);
+    // el jugador menja
+    void playerEat(Player*);
+    // el jugador fa un retruc
+    void playerRebound();
+    // dibuixem el jugador
+    void playerRotation(Player*);
     // trobada de jugadors, jugador i punt de trobada (x, y)
     void playersParty(Player*, Player*);
     // topada entre jugadors
     void playersDance(Player*, Player*);
     // l'un menja l'altre
     void playersLunch(Player*, Player*);
-    // dibuixem el jugador
-    void playerDraw(Player*, bool);
     // torna el jugador que es troba en un lloc
     Player* playerWhoIs(int, int);
     // busca el primer jugador de la llista de la mena sol·licitada
     Player* playerFinder(int);
+    // o a la posició donada
+    Player* playerFinder(int, int);
+    // és jugador o una altre cosa?
+    int isPlayer(QGraphicsItem*);
+    // trobar amb qui topa...
+    bool playerCollision(Player*);
+    // trobar a qui seguir...
+    int playerOnFocus(Player*);
+    // trobar a qui caçar...
+    int playerOnContact(Player*);
+    // gestor de topades (col·lisions)
+    void sceneCollisions();
+    // auto-actualització de l'estat dels jugadors
+    void playersMotion();
     // comptador de jugadors segons la mena i l'estat
     int playerCounter(int, int);
 
@@ -126,10 +156,10 @@ public:
     void gSetInit();
     void gSetRestart();
     void gSetTheatre();
-    void gMakePlayers(int); // la mena de jugadors, bens o llops
-    void gGameStatistics(); // estadístiques del joc
-    void gPlayersStatistics();     // estadístiques del joc
-    void gPlayersTotals();         // acumulats del joc
+    void gMakePlayers(int, int); // la mena de jugadors, bens o llops, i la quantitat
+    void gGameStatistics();      // estadístiques del joc
+    void gPlayersStatistics();   // estadístiques del joc
+    void gPlayersTotals();       // acumulats del joc
 
 public slots:
     // connectors events->mètodes

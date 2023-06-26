@@ -63,7 +63,7 @@ Sheep* newSheep=nullptr;
             // energia, potser la 'putegem' una mica ;-)
             newSheep->energy=energy;
 
-            playerAction(PLAYER_ACTION_CLONE);
+            playerAction(PLAYER_ACTION_PAIR);
 
             //----------------------------------------------
             // variacions genètiques
