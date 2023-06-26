@@ -34,13 +34,13 @@
 #define PIXMAP_HEIGHT   20      // alçada de les icones dels jugadors
 #define PIXMAP_XFOCUS   (PIXMAP_WIDTH)    //((PIXMAP_WIDTH/2))    // per a la detecció dels jugadors dins l'escena
 #define PIXMAP_YFOCUS   (PIXMAP_HEIGHT)  //((PIXMAP_HEIGHT/2))   // per a la detecció dels jugadors dins l'escena
-#define PLAYER_XDRIFT   4 // 10 desplaçament a l'eix X
-#define PLAYER_YDRIFT   4 // 10 desplaçament a l'eix Y
+#define PLAYER_XDRIFT   2 // 10 desplaçament a l'eix X
+#define PLAYER_YDRIFT   2 // 10 desplaçament a l'eix Y
 #define SHEEP_PIXMAPS   8       // n. d'icones a la col·lecció d'icones
 #define WOLF_PIXMAPS    8       // n. d'icones a la col·lecció d'icones
 
 // temps d'autoactualització
-#define GAME_WORLD_TIMER_TIME   40    // 100
+#define GAME_WORLD_TIMER_TIME   30    // 100
 
 // ecosistema del 'joc'
 #define INITIAL_APPLES  32  // 24
@@ -52,17 +52,17 @@
 
 // paràmetres d'energia
 #define APPLE_MAX_ENERGY  250   // 100
-#define SHEEP_MAX_ENERGY  1000   // 500
+#define SHEEP_MAX_ENERGY  800    // 500
 #define WOLF_MAX_ENERGY   1000   // 700
 
 // energia consumida a cada acció
 #define APPLE_DRAINED_ENERGY        25   // quan és 'mossegada'
 #define SHEEP_DRAINED_ENERGY        100  // quan hi ha una acció rellevant (topada, clonatge)
 #define WOLF_DRAINED_ENERGY         60   // quan hi ha una acció rellevant (topada, clonatge)
-#define PLAYER_DRAINED_ONMOVE       2    // quan belluga
+#define PLAYER_DRAINED_ONMOVE       1    // quan belluga
 #define PLAYER_DRAINED_ONFLEE       (PLAYER_DRAINED_ONMOVE*5)
 
-#define SHEEP_CLONE_ON  4    // contactes mínims per donar-lo per clonable
+#define SHEEP_CLONE_ON  3    // contactes mínims per donar-lo per clonable
 #define WOLF_CLONE_ON   2    // contactes mínims per donar-lo per clonable
 
 // intel·ligència virtual ;-)
