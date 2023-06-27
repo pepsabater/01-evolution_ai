@@ -36,19 +36,26 @@
 #define PLAYER_ACTIONS          10  // nombre d'accions esdeveniments
 
 // paràmetres de l'ull
-#define PLAYER_VISION_RADIUS   160
-#define PLAYER_VISION_START    45
-#define PLAYER_VISION_SPAN     90
+#define PLAYER_FULL_VISION      0
+#define PLAYER_SEMI_VISION      1
+#define PLAYER_FVISION_RADIUS 160
+#define PLAYER_SVISION_RADIUS 240
+#define PLAYER_VISION_START    60
+#define PLAYER_VISION_SPAN     60
 
-struct PlayerAspect
+struct stPlayerVision
+{   // modus de visió
+QGraphicsEllipseItem* item=nullptr;
+QColor* color=nullptr;
+QBrush* brush=nullptr;
+int radius=PLAYER_FVISION_RADIUS;
+int startAngle=PLAYER_VISION_START;
+int spanAngle=PLAYER_VISION_SPAN;
+};
+
+struct stPlayerAspect
 {   // imatge associada
 QGraphicsPixmapItem* pixmap=nullptr;
-QGraphicsEllipseItem* visionItem=nullptr;
-QColor* visionColor=nullptr;
-QBrush* visionBrush=nullptr;
-int visionRadius=PLAYER_VISION_RADIUS;
-int visionStartAngle=PLAYER_VISION_START;
-int visionSpanAngle=PLAYER_VISION_SPAN;
 QString pixmapPath="";
 };
 
@@ -72,8 +79,9 @@ bool onPlay;    // si hi és en actiu dins el joc
 // posicionament i orientació
 Compass compass;
 
-// aparença
-struct PlayerAspect playerFace;
+// aparença i visió
+struct stPlayerAspect playerFace;
+struct stPlayerVision playerVision;
 
 // energia
 int energy;             // energia actual
@@ -142,15 +150,15 @@ public:
     int getCompassAngle(){return compass.getCompassAngle();};
     void alignTo(int);
     void pointTo(){compass.pointTo();};
-    void pointTo(int x, int y){compass.pointTo(x,y);};
+    void pointTo(int x, int y, bool tooragainst){compass.pointTo(x, y, tooragainst);};
 
     // camp de visió
-    void setVision();
-    int getVisionRadius(){return playerFace.visionRadius;};
-    int getVisionSpanAngle(){return playerFace.visionSpanAngle;};
-    void setVisionRadius(int visionradius){playerFace.visionRadius=visionradius;};
-    void setVisionItem(QGraphicsEllipseItem* visionitem){playerFace.visionItem=visionitem;};
-    QGraphicsEllipseItem* getVisionItem(){return playerFace.visionItem;};
+    void setVision(int);
+    int getVisionRadius(){return playerVision.radius;};
+    int getVisionSpanAngle(){return playerVision.spanAngle;};
+    void setVisionRadius(int visionradius){playerVision.radius=visionradius;};
+    void setVisionItem(QGraphicsEllipseItem* visionitem){playerVision.item=visionitem;};
+    QGraphicsEllipseItem* getVisionItem(){return playerVision.item;};
 
     // accions i esdeveniments
     bool updateAction (int);

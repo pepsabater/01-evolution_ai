@@ -11,6 +11,8 @@ SOURCES += \
         apple.cpp \
         compass.cpp \
         gamecontrol.cpp \
+        gamelogic.cpp \
+        gameplayer.cpp \
         global.cpp \
         main.cpp \
         mygameview.cpp \

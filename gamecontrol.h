@@ -19,7 +19,7 @@ GameView* gameView;
 MyStatsDialog* gameStatsDialog;
 QPixmap* gameBackImage;
 QBrush* gameBrush;
-QTimer* gameTamTam;
+QTimer* gameTimer;
 
 // estadístiques
 int stIteration=0;
@@ -93,9 +93,9 @@ QString survivorPlayerName[PLAYER_TYPES]={
 std::vector<Player*>playersPool;   // col·lecció de jugadors
 
     // actualitzar les estadístiques
-    void gameStatistics();
+    void gStatistics();
     // afegir jugador
-    bool playerAdd(Player*);
+    bool gPlayerAdd(Player*);
     // desplaçar jugador segons el compàs
     bool playerMove(Player*, int);
     // dur el jugador cap a endavant
@@ -143,16 +143,16 @@ std::vector<Player*>playersPool;   // col·lecció de jugadors
     // trobar a qui caçar...
     int playerOnContact(Player*);
     // gestor de topades (col·lisions)
-    void sceneCollisions();
+    void gSceneCollisions();
     // auto-actualització de l'estat dels jugadors
-    void playersMotion();
+    void gPlayersMotion();
     // comptador de jugadors segons la mena i l'estat
     int playerCounter(int, int);
 
 public:
 
     GameController(QGraphicsScene*, GameView*, MyStatsDialog*);
-    void gStartTamTam(){gameTamTam->start();}
+    void gStartTimer(){gameTimer->start();}
     void gSetInit();
     void gSetRestart();
     void gSetTheatre();
@@ -164,9 +164,9 @@ public:
 public slots:
     // connectors events->mètodes
     // gestor d'actualizació del joc en temps real
-    void onTamTam();
+    void gOnTimer();
     // gestor de teclat, events de teclat
-    void touchMe(QKeyEvent*);
+    void gOnKeys(QKeyEvent*);
 };
 
 #endif // GAMECONTROL_H

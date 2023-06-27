@@ -38,9 +38,9 @@ Player::Player()
 
 Player::~Player()
 {// focus
-  delete playerFace.visionItem;
-  delete playerFace.visionBrush;
-  delete playerFace.visionColor;
+  delete playerVision.item;
+  delete playerVision.brush;
+  delete playerVision.color;
   delete playerFace.pixmap;
 }
 
@@ -52,9 +52,9 @@ void Player::setPos(int xpos, int ypos)
     if (playerFace.pixmap!=nullptr)
         playerFace.pixmap->setPos(xpos, ypos);
 
-    if (playerFace.visionItem!=nullptr)
-        playerFace.visionItem->setPos(xpos-(playerFace.visionRadius/2)+(PIXMAP_WIDTH/2),
-                                      ypos-(playerFace.visionRadius/2)+(PIXMAP_HEIGHT/2));
+    if (playerVision.item!=nullptr)
+        playerVision.item->setPos(xpos-(playerVision.radius/2)+(PIXMAP_WIDTH/2),
+                                      ypos-(playerVision.radius/2)+(PIXMAP_HEIGHT/2));
 }
 
 void Player::alignTo(int newdir)
@@ -63,19 +63,28 @@ void Player::alignTo(int newdir)
     compass.pointTo();
 }
 
-void Player::setVision()
+void Player::setVision(int mode)
 {    // pincell
-    playerFace.visionColor = new QColor(0xaa,0xff,0xff);
-    playerFace.visionColor->setAlpha(96);
-    playerFace.visionBrush = new QBrush(*playerFace.visionColor);
+    playerVision.color = new QColor(0xaa,0xff,0xff);
+    playerVision.color->setAlpha(96);
+    playerVision.brush = new QBrush(*playerVision.color);
     // focus
-    playerFace.visionRadius=PLAYER_VISION_RADIUS;
-    playerFace.visionStartAngle=PLAYER_VISION_START;
-    playerFace.visionSpanAngle=PLAYER_VISION_SPAN;
-    playerFace.visionItem = new QGraphicsEllipseItem(0, 0, playerFace.visionRadius, playerFace.visionRadius);
-    playerFace.visionItem->setBrush(*playerFace.visionBrush);
-    playerFace.visionItem->setStartAngle(PLAYER_VISION_START*16); // clock wise!! 0 = East
-    playerFace.visionItem->setSpanAngle(PLAYER_VISION_SPAN*16);   // counterclock wise!!
+    if (mode == PLAYER_FULL_VISION)
+    {
+        playerVision.radius=PLAYER_FVISION_RADIUS;
+        playerVision.startAngle=0;
+        playerVision.spanAngle=360;
+    }
+    else
+    {
+        playerVision.radius=PLAYER_SVISION_RADIUS;
+        playerVision.startAngle=PLAYER_VISION_START;
+        playerVision.spanAngle=PLAYER_VISION_SPAN;
+    }
+    playerVision.item = new QGraphicsEllipseItem(0, 0, playerVision.radius, playerVision.radius);
+    playerVision.item->setBrush(*playerVision.brush);
+    playerVision.item->setStartAngle(playerVision.startAngle*16); // clock wise!! 0 = East
+    playerVision.item->setSpanAngle(playerVision.spanAngle*16);   // counterclock wise!!
 }
 
 bool Player::updateAction(int action)

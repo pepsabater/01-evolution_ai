@@ -25,8 +25,8 @@ int compassAngle;   // angle actual aliniat amb la brúxola
 public:
 
     Compass();
-    void pointTo();         // aliniar a partir de l'angle de desviació
-    void pointTo(int, int); // aliniar a partir d'un punt (x, y)
+    void pointTo();                 // aliniar-se a partir de l'angle de desviació
+    void pointTo(int, int, bool);   // aliniar-se a partir d'un punt (x, y), true - a favor, false - en contra
     void setXPos(int xpos){xPos=xpos;};
     int getXPos(){return xPos;};
     void setYPos(int ypos){yPos=ypos;};

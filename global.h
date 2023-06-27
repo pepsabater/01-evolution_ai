@@ -59,7 +59,7 @@
 #define APPLE_DRAINED_ENERGY        25   // quan és 'mossegada'
 #define SHEEP_DRAINED_ENERGY        100  // quan hi ha una acció rellevant (topada, clonatge)
 #define WOLF_DRAINED_ENERGY         60   // quan hi ha una acció rellevant (topada, clonatge)
-#define PLAYER_DRAINED_ONMOVE       1    // quan belluga
+#define PLAYER_DRAINED_ONMOVE       5    // quan belluga
 #define PLAYER_DRAINED_ONFLEE       (PLAYER_DRAINED_ONMOVE*5)
 
 #define SHEEP_CLONE_ON  3    // contactes mínims per donar-lo per clonable

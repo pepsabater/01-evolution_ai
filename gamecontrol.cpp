@@ -8,9 +8,9 @@ GameController::GameController(QGraphicsScene* scene, GameView* view, MyStatsDia
     gameStatsDialog=statsDialog;
 
     // connectem els events de teclat i un temporitzador a la classe
-    connect(view, SIGNAL(keyPressEvent(QKeyEvent*)), this, SLOT(touchMe(QKeyEvent*)));
-    gameTamTam = new QTimer();
-    connect(gameTamTam, SIGNAL(timeout()), this, SLOT(onTamTam()));
+    connect(view, SIGNAL(keyPressEvent(QKeyEvent*)), this, SLOT(gOnKeys(QKeyEvent*)));
+    gameTimer = new QTimer();
+    connect(gameTimer, SIGNAL(timeout()), this, SLOT(gOnTimer()));
 }
 
 void GameController::gSetInit ()
@@ -23,7 +23,7 @@ void GameController::gSetInit ()
     // defineix la mida de l'escena
     gameScene->setSceneRect(0,0,VIEW_WIDTH,VIEW_HEIGHT);
     // programa el temporitzador
-    gameTamTam->setInterval(GAME_WORLD_TIMER_TIME);
+    gameTimer->setInterval(GAME_WORLD_TIMER_TIME);
 }
 
 void GameController::gSetRestart()
@@ -81,7 +81,7 @@ Player* newplayer=nullptr;
             facepixmap = new QGraphicsPixmapItem(QPixmap(newplayer->getPixmapPath()));
             newplayer->setPixmap(facepixmap);
 
-            if (playerAdd (newplayer)== true)
+            if (gPlayerAdd (newplayer)== true)
             {   // estadístiques
                 stLiveApples++;
                 stInApples++;
@@ -103,9 +103,9 @@ Player* newplayer=nullptr;
             newplayer->setPixmapPath(facepixpath);
             facepixmap = new QGraphicsPixmapItem(QPixmap(newplayer->getPixmapPath()));
             newplayer->setPixmap(facepixmap);
-            newplayer->setVision();
+            newplayer->setVision(PLAYER_FULL_VISION);
 
-            if (playerAdd (newplayer)==true)
+            if (gPlayerAdd (newplayer)==true)
             {   // estadístiques
                 stLiveSheeps++;
                 stInSheeps++;
@@ -130,9 +130,9 @@ Player* newplayer=nullptr;
             newplayer->setPixmapPath(facepixpath);
             facepixmap = new QGraphicsPixmapItem(QPixmap(newplayer->getPixmapPath()));
             newplayer->setPixmap(facepixmap);
-            newplayer->setVision();
+            newplayer->setVision(PLAYER_SEMI_VISION);
 
-            if (playerAdd (newplayer)==true)
+            if (gPlayerAdd (newplayer)==true)
             {   // estadístiques
                 stLiveWolves++;
                 stInWolves++;
@@ -151,7 +151,7 @@ Player* newplayer=nullptr;
 //------------------------------------------
 // posa a l' dia'hora els elements del joc
 //------------------------------------------
-void GameController::onTamTam()
+void GameController::gOnTimer()
 {
 int counter;
 static int growCounter=0;
@@ -205,7 +205,7 @@ int newApples=0;
                 {
                    newPlayer=currPlayer->Raise();
 
-                    if (newPlayer!=nullptr && playerAdd(newPlayer)==true)
+                    if (newPlayer!=nullptr && gPlayerAdd(newPlayer)==true)
                     {   // estadístiques
                         stLiveSheeps++;
                         stInSheeps++;
@@ -225,7 +225,7 @@ int newApples=0;
                 {
                     newPlayer=currPlayer->Raise();
 
-                    if (newPlayer!=nullptr && playerAdd (newPlayer)==true)
+                    if (newPlayer!=nullptr && gPlayerAdd (newPlayer)==true)
                     {   // estadístiques
                         stLiveWolves++;
                         stInWolves++;
@@ -245,9 +245,9 @@ int newApples=0;
     }
 
     // belluguem els jugadors
-    playersMotion();
+    gPlayersMotion();
     // analisi de topades
-    sceneCollisions();
+    gSceneCollisions();
     // visualitzar estadístiques
     gGameStatistics();
     gPlayersStatistics();
@@ -255,7 +255,7 @@ int newApples=0;
     // si ha mort tota una espècie!
     if (stLiveSheeps==0 || stLiveWolves==0)
     { // aturem el món!
-        gameTamTam->stop();
+        gameTimer->stop();
         // guanyador del joc
         if(stLiveSheeps==0||stLiveWolves==0)
         {
@@ -268,7 +268,7 @@ int newApples=0;
     }
 }
 
-void GameController::playersMotion()
+void GameController::gPlayersMotion()
 {
 int counter;
 
@@ -287,333 +287,11 @@ int counter;
         }
 }
 
-//---------------------
-// belluga el jugador
-//---------------------
-bool GameController::playerMove (Player* player, int action)
-{
-bool retval=false;
-
-    // si és un jugador vàlid
-    if (player!=nullptr)
-    {   // hi haurà moviment/acció
-        retval=true;
-        // a veure que ens demanen de fer
-        switch (action)
-        {
-        case PLAYER_ACTION_GO:
-            playerGo(player);
-            break;
-        case PLAYER_ACTION_TLEFT:
-            playerGoLeft(player);
-            break;
-        case PLAYER_ACTION_TRIGHT:
-            playerGoRight(player);
-            break;
-        case PLAYER_ACTION_REVERSE:
-            playerGoReverse(player);
-            break;
-        case PLAYER_ACTION_WAIT:
-            playerWait(player);
-            break;
-        case PLAYER_ACTION_PURSUE:
-            playerPursue(player);
-            break;
-        case PLAYER_ACTION_FLEE:
-            playerFlee(player);
-            break;
-        case PLAYER_ACTION_FIGHTH:
-            playerFight(player);
-            break;
-        case PLAYER_ACTION_PAIR:
-            playerPair(player);
-            break;
-        case PLAYER_ACTION_EATING:
-            playerEat(player);
-            break;
-        default:    // no sap on vol anar!
-            retval=false;
-        }
-    }
-    return retval;
-}
-
-void GameController::playerGo (Player* player)
-{
-int newxpos=0;
-int newypos=0;
-
-    // si no és un jugador vàlid
-    if (player==nullptr)
-        return;
-
-    // enregistrem la seva posicio
-    newxpos=player->getXPos();
-    newypos=player->getYPos();
-
-    switch (player->getCompass())
-    {   // recalculem la posició segon la brúixola
-    case COMPASS_N:
-        newypos-=PLAYER_XDRIFT;
-        break;
-    case COMPASS_NE:
-        newxpos+=PLAYER_XDRIFT;
-        newypos-=PLAYER_YDRIFT;
-        break;
-    case COMPASS_E:
-        newxpos+=PLAYER_XDRIFT;
-        break;
-    case COMPASS_SE:
-        newxpos+=PLAYER_XDRIFT;
-        newypos+=PLAYER_YDRIFT;
-        break;
-    case COMPASS_S:
-        newypos+=PLAYER_YDRIFT;
-        break;
-    case COMPASS_SW:
-        newxpos-=PLAYER_XDRIFT;
-        newypos+=PLAYER_YDRIFT;
-        break;
-    case COMPASS_W:
-        newxpos-=PLAYER_XDRIFT;
-        break;
-    case COMPASS_NW:
-        newxpos-=PLAYER_XDRIFT;
-        newypos-=PLAYER_YDRIFT;
-        break;
-    default:    // no sap on vol anar!
-        return;
-    }
-
-    // si la nova posició és dins l'escena
-    if ((newxpos>=0 && newxpos <= VIEW_WIDTH-PIXMAP_WIDTH)
-        && (newypos>=0 && newypos <= VIEW_HEIGHT-PIXMAP_HEIGHT))
-        // posem al'hora les coordinades del jugador
-        player->setPos(newxpos, newypos);
-    else    // si no, retruc
-        switch (player->getCompass())
-        {
-        case COMPASS_N:
-        case COMPASS_E:
-        case COMPASS_S:
-        case COMPASS_W:
-            playerGoReverse(player);
-            break;
-        case COMPASS_NE:
-            if (newxpos > VIEW_WIDTH-PIXMAP_WIDTH)
-                playerGoLeft(player);
-            else
-                playerGoRight(player);
-            break;
-        case COMPASS_SE:
-            if (newxpos > VIEW_WIDTH-PIXMAP_WIDTH)
-                playerGoRight(player);
-            else
-                playerGoLeft(player);
-            break;
-        case COMPASS_SW:
-            if (newxpos < 0)
-                playerGoLeft(player);
-            else
-                playerGoRight(player);
-            break;
-        case COMPASS_NW:
-            if (newxpos < 0)
-                playerGoRight(player);
-            else
-                playerGoLeft(player);
-            break;
-        }
-}
-
-void GameController::playerWait(Player* player)
-{}
-
-void GameController::playerPursue(Player* player)
-{}
-
-void GameController::playerFlee(Player* player)
-{}
-
-void GameController::playerFight(Player* player)
-{}
-
-void GameController::playerPair(Player* player)
-{}
-
-void GameController::playerEat(Player* player)
-{}
-
-//---------------------------------------
-// nucli principal de la lògica del joc
-//---------------------------------------
-void GameController::playersParty (Player* sourcePlayer, Player* targetPlayer)
-{
-    // són dos jugadors vàlids
-    if (sourcePlayer != nullptr && targetPlayer != nullptr)
-    {   // analitzem la 'trobada'
-        switch (sourcePlayer->getType())
-        {
-        case PLAYER_TYPE_SHEEP:
-            switch (targetPlayer->getType())
-            {
-            case PLAYER_TYPE_APPLE: // troba una poma i se la menja
-                playersLunch (sourcePlayer, targetPlayer);
-                break;
-            case PLAYER_TYPE_SHEEP: // troba un altre bé
-                if (alNumGen(0,9,1) < targetPlayer->getEmpathy())    // si l'hi cau prou bé... uhm...
-                    // no apte per a la canalla ;-)
-                    sourcePlayer->playerPair();
-                else    // s'esbatussen
-                    playersDance (sourcePlayer, targetPlayer);
-                break;
-            case PLAYER_TYPE_WOLF:  // troba un llop
-                if (alNumGen(0,9,1) < targetPlayer->getBravery()) // segons com de valent sigui
-                    playersDance (sourcePlayer, targetPlayer);
-                else    // fuig
-                    targetPlayer->setCompass(sourcePlayer->getCompass());
-                break;
-            default:
-                break;
-            }
-            break;
-        case PLAYER_TYPE_WOLF:
-            switch (targetPlayer->getType())
-            {
-            case PLAYER_TYPE_APPLE: // troba una poma...
-                // potser se la menja
-                if (sourcePlayer->getEnergy() <= sourcePlayer->getDrainEnergy()
-                    && alNumGen(0,1,1)==1) // hi ha gana i l'hi va la vida, però no menja sempre
-                    // doncs sí
-                    playersLunch (sourcePlayer, targetPlayer);
-                break;
-            case PLAYER_TYPE_SHEEP:     // troba un bé...
-                // potser se'l menja
-                if ((alNumGen(0,9,1) < targetPlayer->getBravery()))   // segons com sigui de valent l'altre
-                    // doncs sí
-                    playersLunch (sourcePlayer, targetPlayer);
-                else    // s'esbatussen
-                    playersDance(sourcePlayer, targetPlayer);
-                break;
-            case PLAYER_TYPE_WOLF:  // troba un llop
-                // no tots els contactes són bons
-                if ((alNumGen(0,9,1) < targetPlayer->getEmpathy()))   // si li cau prou bé... uhm...
-                    // no apte per a la canalla ;-)
-                    sourcePlayer->playerPair();
-                else    // s'esbatussen
-                    playersDance(sourcePlayer, targetPlayer);
-                break;
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-//---------------------------------------
-// processa les topades entre jugadors
-//---------------------------------------
-
-void GameController::playersDance(Player* sourcePlayer, Player* targetPlayer)
-{
-    // qui topa pren mal
-    sourcePlayer->playerDrainEnergy(sourcePlayer->getDrainEnergy());
-    // i l'altre a més a més... s'enfila...
-    targetPlayer->playerDrainEnergy(targetPlayer->getDrainEnergy()+PLAYER_DRAINED_ONFLEE);
-    // cap a l'altra banda
-    targetPlayer->setCompass(sourcePlayer->getCompass());
-}
-
-//-------------------------------------------
-// bé, un dels dos és el plat principal ;-)
-//-------------------------------------------
-
-void GameController::playersLunch(Player* playerEating, Player* playerEaten)
-{
-int eatingEnergyTo=0;
-int energyInOut=0;
-
-    if (playerEating!=nullptr && playerEaten!=nullptr)
-    {   // energia que hauria de consumir qui menja
-        switch (playerEating->getType())
-        {
-        case PLAYER_TYPE_SHEEP:
-            eatingEnergyTo=SHEEP_MAX_ENERGY-playerEating->getEnergy();
-            break;
-        case PLAYER_TYPE_WOLF:
-            eatingEnergyTo=WOLF_MAX_ENERGY-playerEating->getEnergy();
-            break;
-        default:
-            return;
-        }
-        // calculem l'energia a transsaccionar
-        energyInOut=(playerEaten->getEnergy() >= eatingEnergyTo)? eatingEnergyTo : playerEaten->getEnergy();
-        playerEating->playerEating(energyInOut);
-
-//        playerEaten->playerEaten(energyInOut);    // consumim tant sols una mica, segueis viu
-        playerEaten->playerEating(playerEaten->getEnergy()); // consumim tota la seva energia, es mor
-    }
-}
-
-//--------------------------------
-// el jugador tomba a l'esquerra
-//--------------------------------
-
-void GameController::playerGoLeft(Player* player)
-{
-int leftDir;
-
-    if (player!=nullptr)
-    {   // un tomb a l'esquerra tanca l'angle
-        leftDir=player->getCompass() - 1;
-        (leftDir < 0)? player->setCompass(COMPASS_STEPS - 1) : player->setCompass(leftDir);
-        player->pointTo();
-        playerRotation(player);
-    }
-}
-
-//----------------------
-// el jugador gira cua
-//----------------------
-
-void GameController::playerGoReverse(Player* player)
-{
-int newDir;
-
-    if (player!=nullptr)
-    {
-        newDir=player->getCompass() + COMPASS_STEPS/2;
-        (newDir >= COMPASS_STEPS)? player->setCompass(newDir-COMPASS_STEPS) : player->setCompass(newDir);
-        player->pointTo();
-        playerRotation(player);
-    }
-}
-
-//-------------------------------
-// el jugador tomba a la dreta
-//-------------------------------
-
-void GameController::playerGoRight(Player* player)
-{
-int rightDir;
-
-    if (player!=nullptr)
-    {   // un tomb a la dreta obre l'angle
-        rightDir=player->getCompass() + 1;
-        (rightDir >= COMPASS_STEPS)? player->setCompass(0) : player->setCompass(rightDir);
-        player->pointTo();
-        playerRotation(player);
-    }
-}
-
 //----------------------------------------
 // afegueix el jugador i l'hi busca lloc
 //----------------------------------------
 // fa servir el vector de jugadors
-bool GameController::playerAdd(Player* newplayer)
+bool GameController::gPlayerAdd(Player* newplayer)
 {
 bool retval=false;
 
@@ -648,7 +326,7 @@ bool retval=false;
 // control del joc per teclat (per proves)
 //-----------------------------------------------
 
-void GameController::touchMe (QKeyEvent* keyEvent)
+void GameController::gOnKeys (QKeyEvent* keyEvent)
 {
 static Player* gamePlayer0=nullptr;
 int playeraction=0;
@@ -675,7 +353,7 @@ int playeraction=0;
         break;
     case Qt::Key_Space:
         // aturar/endegar el rellotge
-        (gameTamTam->isActive()==true)? gameTamTam->stop() : gameTamTam->start();
+        (gameTimer->isActive()==true)? gameTimer->stop() : gameTimer->start();
         return;
     default:
         return;
@@ -726,90 +404,8 @@ Player* foundPlayer=nullptr;
     return foundPlayer;
 }
 
-int GameController::isPlayer(QGraphicsItem* graphitem)
-{   // és jugador o una altre cosa?
-int retval=PLAYER_NONE;
-int counter;
 
-    if (graphitem== nullptr)
-        return retval;
-
-    for(counter=0; (unsigned int)counter < playersPool.size(); counter++)
-        if(playersPool[counter]->getPixmap()==graphitem)
-        {
-            retval=counter;
-            break;
-        }
-    return retval;
-}
-
-bool GameController::playerCollision(Player* player)
-{   // es validen els contactes del jugador
-QList<QGraphicsItem*> playerslist;
-int playeritems=0;
-bool retval;
-
-    if (player==nullptr)
-        return false;
-
-    // si té cercle de captura té un item+
-    if (player->getVisionItem()!=nullptr)
-        playeritems++;
-
-    playerslist=gameScene->collidingItems(player->getPixmap());
-    retval=(playerslist.size() > playeritems)? true : false;
-    return retval;
-}
-
-int GameController::playerOnFocus(Player* player)
-{   // es validen els contactes del jugador 0
-int counter;
-int loadplayer=PLAYER_NONE;
-int foundplayer=PLAYER_NONE;
-QList<QGraphicsItem*> playerslist;
-
-    if (player==nullptr || player->isActive() == false)
-        return foundplayer;
-
-    playerslist=gameScene->collidingItems(player->getVisionItem());
-
-    for (counter=0; counter < playerslist.size(); counter++)
-    {
-        loadplayer=isPlayer(playerslist[counter]);
-        if (loadplayer != PLAYER_NONE && playersPool[loadplayer] != player)
-        {
-            foundplayer=loadplayer;
-            break;
-        }
-    }
-    return foundplayer;
-}
-
-int GameController::playerOnContact(Player* player)
-{   // es validen els contactes del jugador 0
-int counter;
-int loadplayer=PLAYER_NONE;
-int foundplayer=PLAYER_NONE;
-QList<QGraphicsItem*> playerslist;
-
-    if (player==nullptr || player->isActive() == false)
-        return foundplayer;
-
-    playerslist=gameScene->collidingItems(player->getPixmap());
-
-    for (counter=0; counter < playerslist.size(); counter++)
-    {
-        loadplayer=isPlayer(playerslist[counter]);
-        if (loadplayer != PLAYER_NONE && playersPool[loadplayer] != player)
-        {
-            foundplayer = loadplayer;
-            break;
-        }
-    }
-    return foundplayer;
-}
-
-void GameController::sceneCollisions()
+void GameController::gSceneCollisions()
 {   // es validen els contactes del jugador 0
 int oncontactplayer=PLAYER_NONE;
 int onfocusplayer=PLAYER_NONE;
@@ -819,7 +415,8 @@ int counter=0;
     {
         oncontactplayer=playerOnContact(playersPool[counter]);
 
-        if (oncontactplayer != PLAYER_NONE && playersPool[oncontactplayer]->isOnPlay() == true
+        if (oncontactplayer != PLAYER_NONE
+            && playersPool[oncontactplayer]->isOnPlay() == true
             && (playersPool[counter]->getType() - playersPool[oncontactplayer]->getType()) == 1)
         {   // si n'hi ha cap en contacte, ens el pelem! - per ara
             playersPool[counter]->isHunting(false);
@@ -844,6 +441,7 @@ int counter=0;
                 stOutWolfTotals++;
                 break;
             }
+
             if (playersPool[oncontactplayer]->getVisionItem() != nullptr)
                 gameScene->removeItem(playersPool[oncontactplayer]->getVisionItem());
             gameScene->removeItem(playersPool[oncontactplayer]->getPixmap());
@@ -853,68 +451,34 @@ int counter=0;
         {
             onfocusplayer=playerOnFocus(playersPool[counter]);
 
-            if (onfocusplayer != PLAYER_NONE && playersPool[onfocusplayer]->isOnPlay() == true)
-                switch (playersPool[counter]->getType() - playersPool[onfocusplayer]->getType())
-                {
-                case -1:    // és un depredador, fugim
-                    playersPool[counter]->isFleeing(true);
-                    playerGoReverse(playersPool[counter]);
-                    break;
-                case 0: // és un 'igual'
-                    playersPool[counter]->isHunting(false);
-                    playersPool[counter]->isFleeing(false);
-                    break;
-                case 1: // és menjar, el cerquem
-                    playersPool[counter]->isHunting(true);
-                    playersPool[counter]->isFleeing(false);
-                    playersPool[counter]->pointTo(playersPool[onfocusplayer]->getXPos(), playersPool[onfocusplayer]->getYPos());
-                    playerRotation(playersPool[counter]);
-                    break;
-                }
-
+            if (onfocusplayer != PLAYER_NONE
+                && playersPool[onfocusplayer]->isOnPlay() == true)
+            {
+                if (playersPool[counter]->isFleeing() == false)
+                    switch (playersPool[counter]->getType() - playersPool[onfocusplayer]->getType())
+                    {
+                    case -1:    // és un depredador, fugim
+                        playersPool[counter]->isFleeing(true);
+                        playersPool[counter]->pointTo(playersPool[onfocusplayer]->getXPos(), playersPool[onfocusplayer]->getYPos(), false);
+                        playerRotation(playersPool[counter]);
+                        break;
+                    case 0: // és un 'igual'
+                        playersPool[counter]->isHunting(false);
+                        break;
+                    case 1: // és menjar, el cerquem
+                        playersPool[counter]->isHunting(true);
+                        playersPool[counter]->pointTo(playersPool[onfocusplayer]->getXPos(), playersPool[onfocusplayer]->getYPos(), true);
+                        playerRotation(playersPool[counter]);
+                        break;
+                    }
+            }
+            else
+            {
+                playersPool[counter]->isFleeing(false);
+                playersPool[counter]->isHunting(false);
+            }
         }
     }
-}
-
-//-------------------------------------
-// compta jugadors per mena i l'estat
-//-------------------------------------
-// fa servir el vector de jugadors
-
-int GameController::playerCounter(int playerType, int playerStatus)
-{
-int counter;
-int players=0;
-
-    for (counter=0; (unsigned long)counter < playersPool.size(); counter++)
-        if (playersPool[counter]->getType()==playerType
-        && playersPool[counter]->getStatus()==playerStatus
-        && playersPool[counter]->isOnPlay()==true)
-            players++;
-    return players;
-}
-
-//-----------------------------------------
-// retorna el jugador que hi ha a un lloc
-//-----------------------------------------
-// fa servir el vector de jugadors
-
-Player* GameController :: playerWhoIs(int xpos, int ypos)
-{
-int counter;
-Player* foundPlayer = nullptr;
-
-    for(counter=0; (unsigned long)counter < playersPool.size(); counter++)
-    {
-        foundPlayer=playersPool[counter];
-        if (foundPlayer->getXPos() == xpos
-            && foundPlayer->getYPos() == ypos
-            && foundPlayer->isOnPlay()==true)
-            break;
-        else
-            foundPlayer=nullptr;
-    }
-    return foundPlayer;
 }
 
 //-----------------------------------------------------------
