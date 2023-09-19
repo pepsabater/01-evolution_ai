@@ -27,9 +27,9 @@
 #include "player.h"
 
 // paràmetres gràfics
-#define VIEW_WIDTH      1440    // 1440 amplada de la pantalla de joc
-#define DIALOG_WIDTH    320     // 240 amplada del diàleg
-#define VIEW_HEIGHT     960     // 800 alçada de la pantalla de joc
+#define VIEW_WIDTH      1280    // 1440 amplada de la pantalla de joc
+#define DIALOG_WIDTH    320     // 320 amplada del diàleg
+#define VIEW_HEIGHT     800     // 960 alçada de la pantalla de joc
 #define PIXMAP_WIDTH    20      // amplada de les icones dels jugadors
 #define PIXMAP_HEIGHT   20      // alçada de les icones dels jugadors
 #define PIXMAP_XFOCUS   (PIXMAP_WIDTH)    //((PIXMAP_WIDTH/2))    // per a la detecció dels jugadors dins l'escena

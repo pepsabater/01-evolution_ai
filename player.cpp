@@ -66,7 +66,8 @@ void Player::alignTo(int newdir)
 void Player::setVision(int mode)
 {    // pincell
     playerVision.color = new QColor(0xaa,0xff,0xff);
-    playerVision.color->setAlpha(96);
+//    playerVision.color->setAlpha(96);
+    playerVision.color->setAlpha(0);
     playerVision.brush = new QBrush(*playerVision.color);
     // focus
     if (mode == PLAYER_FULL_VISION)

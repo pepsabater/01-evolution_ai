@@ -404,7 +404,6 @@ Player* foundPlayer=nullptr;
     return foundPlayer;
 }
 
-
 void GameController::gSceneCollisions()
 {   // es validen els contactes del jugador 0
 int oncontactplayer=PLAYER_NONE;
@@ -416,36 +415,46 @@ int counter=0;
         oncontactplayer=playerOnContact(playersPool[counter]);
 
         if (oncontactplayer != PLAYER_NONE
-            && playersPool[oncontactplayer]->isOnPlay() == true
-            && (playersPool[counter]->getType() - playersPool[oncontactplayer]->getType()) == 1)
-        {   // si n'hi ha cap en contacte, ens el pelem! - per ara
-            playersPool[counter]->isHunting(false);
+            && playersPool[oncontactplayer]->isOnPlay() == true)
+        {
+            switch (playersPool[counter]->getType() - playersPool[oncontactplayer]->getType())
+            {
+            case 1: // hi ha contacte amb un 'inferior', ens el pelem! - per ara
+                playersPool[counter]->isHunting(false);
 
-            switch (playersPool[oncontactplayer]->getType())
-            {   // estadístiques
-            case PLAYER_TYPE_APPLE:
-                stLiveApples--;
-                stOutApples++;
-                stOutAppleTotals++;
+                switch (playersPool[oncontactplayer]->getType())
+                {   // estadístiques
+                case PLAYER_TYPE_APPLE:
+                    stLiveApples--;
+                    stOutApples++;
+                    stOutAppleTotals++;
+                    break;
+                case PLAYER_TYPE_SHEEP:
+                    lastSheep=playersPool[oncontactplayer];
+                    stLiveSheeps--;
+                    stOutSheeps++;
+                    stOutSheepTotals++;
+                    break;
+                case PLAYER_TYPE_WOLF:
+                    lastWolf=playersPool[oncontactplayer];
+                    stLiveWolves--;
+                    stOutWolves++;
+                    stOutWolfTotals++;
+                    break;
+                }
+
+                if (playersPool[oncontactplayer]->getVisionItem() != nullptr)
+                    gameScene->removeItem(playersPool[oncontactplayer]->getVisionItem());
+                gameScene->removeItem(playersPool[oncontactplayer]->getPixmap());
+                playersPool[oncontactplayer]->playerPlayOff();
                 break;
-            case PLAYER_TYPE_SHEEP:
-                lastSheep=playersPool[oncontactplayer];
-                stLiveSheeps--;
-                stOutSheeps++;
-                stOutSheepTotals++;
+            case 2: // un llop topa amb una poma
+                playerGoReverse(playersPool[counter]);
+                playerGo(playersPool[counter]);
                 break;
-            case PLAYER_TYPE_WOLF:
-                lastWolf=playersPool[oncontactplayer];
-                stLiveWolves--;
-                stOutWolves++;
-                stOutWolfTotals++;
+            default:
                 break;
             }
-
-            if (playersPool[oncontactplayer]->getVisionItem() != nullptr)
-                gameScene->removeItem(playersPool[oncontactplayer]->getVisionItem());
-            gameScene->removeItem(playersPool[oncontactplayer]->getPixmap());
-            playersPool[oncontactplayer]->playerPlayOff();
         }
         else
         {
